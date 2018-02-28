@@ -1,4 +1,4 @@
-# Attention based Neural Networks for Chemical Protein Realtion
+# Attention based Neural Networks for Chemical Protein Relation
 
 Task description: http://www.biocreative.org/tasks/biocreative-vi/track-5/
 
