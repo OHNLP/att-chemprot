@@ -5,7 +5,9 @@ from keras import activations, initializers, regularizers, constraints
 
 class AttentionWithContext(Layer):
     """
+		Ref: https://gist.github.com/cbaziotis/7ef97ccf71cbc14366835198c09809d2
         Attention operation, with a context/query vector, for temporal data.
+
         Supports Masking.
         Follows the work of Yang et al. [https://www.cs.cmu.edu/~diyiy/docs/naacl16.pdf]
         "Hierarchical Attention Networks for Document Classification"
@@ -101,6 +103,3 @@ class AttentionWithContext(Layer):
         """Shape transformation logic so Keras can infer output shape
         """
         return (input_shape[0], input_shape[-1])
-
-    
-    

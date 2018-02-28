@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 
 # In[2]:
 
-from cnn import load_model, predict_classes, data
+from dnn import load_model, predict_classes, data
 import gzip
 import numpy as np
 # from attention_utils import get_activations
@@ -215,38 +215,46 @@ if to_plot:
         if rel_instance[0] == 'NA':
             continue
 
-        fig = plt.figure(figsize=(len(tokens), 2))
+        fig = plt.figure(figsize=(len(tokens), 4))
 
-        chem_ent_tk_id, gene_ent_tk_id = int(rel_instance[3]), int(rel_instance[4])
+        chem_ent_tk_id = int(rel_instance[3])
+
+        gene_ent_tk_id = int(rel_instance[4])
 
         values = get_att_weights(sent_idx)[:sent_len]
 
-        fig = plt.figure(figsize=(sent_len, 2))
-        # make 170 x 3 matrix for image plot.
-        x_matrix = np.array([values for _ in range(3)])
+        # make tokens_len x 3 matrix for image plot.
+        x_matrix = np.array([values for _ in range(10)])
 
         ax = plt.imshow(x_matrix, aspect='auto', interpolation='nearest', cmap='Blues', origin='upper').get_axes()
 
         # plt.xticks(range(len(label)), label, size='medium')
         # plt.tight_layout(pad=2, w_pad=2, h_pad=2)
 
+        tk_labels = []
         for i, token in enumerate(tokens):
-            color = 'black'
-            if values[i] > 0.9 * values.max():
-                color = 'white'
-
             tk2plot = token.decode("utf-8", "ignore")
             if i == chem_ent_tk_id or i == gene_ent_tk_id:
                 tk2plot = "[%s]" % tk2plot
 
-            ax.text(i, 0, tk2plot, horizontalalignment='center', color=color)
+            tk_labels.append(tk2plot)
 
-        ax.set_ylim([-1, 0.8])
-        plt.axis('off')
+            #         ax.text(i, 0, tk2plot,  horizontalalignment='center', color=color)
 
-        plt.tight_layout()
+        tick_marks = np.arange(sent_len)
+        plt.xticks(tick_marks, tk_labels, rotation=45, fontsize=20, ha='right')
 
-        plt.title("%s id:%d" % (mode, sent_idx))
+        #     ax.set_ylim([-1, 0.8])
+        #     plt.axis('off')
+        ax.set_yticklabels([])
+        #     plt.setp(ax.get_xticklabels(), visible=False)
+        plt.setp(ax.get_yticklabels(), visible=False)
+        ax.tick_params(axis='both', which='both', length=0)
+
+        # plt.tight_layout()
+
+        # plt.title("%s id:%d" % (mode, sent_idx))
+        plt.gcf().subplots_adjust(bottom=.45)
 
         plt.savefig('output/att_vis/dev_%d.png' % sent_idx)
         plt.close()

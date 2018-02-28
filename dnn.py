@@ -1,19 +1,13 @@
 """
-This is a CNN for relation classification within a sentence. The architecture is based on:
+Attention based Recurrent Neural Network for biomedical relation extraction within a sentence.
+
+The architecture is based on:
 
 Daojian Zeng, Kang Liu, Siwei Lai, Guangyou Zhou and Jun Zhao, 2014, Relation Classification via Convolutional Deep Neural Network
 
-Performance (without hyperparameter optimization):
-Accuracy: 0.7943
-Macro-Averaged F1 (without Other relation):  0.7612
-
-Performance Zeng et al.
-Macro-Averaged F1 (without Other relation): 0.789
-
-
 Code was tested with:
-- Python 2.7 & Python 3.6
-- Theano 0.9.0 & TensorFlow 1.2.1
+- Python 2.7
+- TensorFlow 1.2.1
 - Keras 2.0.5
 """
 
@@ -205,37 +199,6 @@ def init_cnn_model():
     return model
 
 
-def init_att_cnn():
-    print("Embeddings: ", embeddings.shape)
-
-    words_input = Input(shape=(max_sentence_len,), dtype='int32', name='words_input')
-    words = Embedding(embeddings.shape[0], embeddings.shape[1], weights=[embeddings], trainable=False)(words_input)
-
-    distance1_input = Input(shape=(max_sentence_len,), dtype='int32', name='distance1_input')
-    distance1 = Embedding(max_position, position_dims)(distance1_input)
-
-    distance2_input = Input(shape=(max_sentence_len,), dtype='int32', name='distance2_input')
-    distance2 = Embedding(max_position, position_dims)(distance2_input)
-
-    output = concatenate([words, distance1, distance2])
-
-    output = Convolution1D(filters=nb_filter,
-                           kernel_size=filter_length,
-                           padding='same',
-                           activation='tanh',
-                           strides=1)(output)
-
-    # we use standard max over time pooling
-    # output = GlobalMaxPooling1D()(output)
-
-    output = AttentionWithContext()(output)
-    output = Dense(n_out, activation='softmax')(output)
-
-    model = Model(inputs=[words_input, distance1_input, distance2_input], outputs=[output])
-
-    return model
-
-
 def init_att_lstm_model():
     words_input = Input(shape=(max_sentence_len,), dtype='int32', name='words_input')
     words = Embedding(embeddings.shape[0], embeddings.shape[1], weights=[embeddings], trainable=False)(words_input)
@@ -272,35 +235,6 @@ def init_att_gru_model():
     model = Model(inputs=[words_input, distance1_input, distance2_input], outputs=output)
 
     return model
-
-
-def init_seq_att_model():
-    words_input = Input(shape=(max_sentence_len,), dtype='int32', name='words_input')
-    words = Embedding(embeddings.shape[0], embeddings.shape[1], weights=[embeddings], trainable=False)(words_input)
-    distance1_input = Input(shape=(max_sentence_len,), dtype='int32', name='distance1_input')
-    distance1 = Embedding(max_position, position_dims)(distance1_input)
-
-    distance2_input = Input(shape=(max_sentence_len,), dtype='int32', name='distance2_input')
-    distance2 = Embedding(max_position, position_dims)(distance2_input)
-
-
-    wm = Sequential()
-    wm.add(Embedding(embeddings.shape[0], embeddings.shape[1], weights=[embeddings], trainable=False))
-
-    d1m = Sequential()
-    d1m.add(Embedding(max_position, position_dims))
-
-    d2m = Sequential()
-    d2m.add(Embedding(max_position, position_dims))
-
-    model = Sequential()
-    model.add(LSTM(lstm_units, return_sequences=True))
-    model.add(AttentionWithContext())
-    model.add(Dense(n_out, activation='sigmoid'))
-    # model = Model(input=[words_input, distance1_input, distance2_input], output=output)
-
-    return model
-
 
 def init_rnn_model():
     words_input = Input(shape=(max_sentence_len,), dtype='int32', name='words_input')
@@ -352,41 +286,6 @@ def do_training():
     # pred_train = predict_classes(model.predict([sentenceTrain, positionTrain1, positionTrain2], verbose=False), pred_tag='train')
 
     save_model(model_dir, model)
-
-    print("Training done. ")
-
-
-def try_class_weights():
-    model = init_cnn_model()
-    # model = init_rnn_model()
-    # model = init_att_rnn_model()
-    # model = init_cnn_2_model()
-    # model = init_att_context_model()
-
-    # model = init_att_cnn()
-
-    optimizer = keras.optimizers.Adam(lr=0.001, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
-
-    model.compile(optimizer=optimizer, loss='sparse_categorical_crossentropy', metrics=['accuracy'])
-
-    model.summary()
-
-    for weight in [.33 * i for i in range(1, 16)]:
-
-        class_weights = {0: 1., 1: weight, 2: weight, 3: weight, 4: weight, 5: weight}
-        model.reset_states()
-        model.fit([sentenceTrain, positionTrain1, positionTrain2], yTrain, batch_size=batch_size,
-                      verbose=0, epochs=nb_epoch,
-                      class_weight=class_weights,
-                      )
-
-        pred_dev = predict_classes(model.predict([sentenceDev, positionDev1, positionDev2], verbose=False))
-        p, r, f1, support = precision_recall_fscore_support(yDev, pred_dev, average='weighted', labels=range(1, 6))
-        print("%.3f, %.3f, %.3f, %.3f" % (weight, p, r, f1))
-
-    # pred_train = predict_classes(model.predict([sentenceTrain, positionTrain1, positionTrain2], verbose=False), pred_tag='train')
-
-    # save_model(model_dir, model)
 
     print("Training done. ")
 
@@ -467,28 +366,6 @@ def official_eval(output_tsv, gs_tsv):
     os.chdir('..')
     print()
 
-
-def submission_run(model_name):
-    pred_dev, pred_test = do_training()
-
-    output_dev_tsv = 'data/pred_dev_%s.tsv' % model_name
-    output_test_tsv = 'data/pred_test_%s.tsv' % model_name
-
-    # pred_dev = do_dev()
-
-    gs_dev_tsv = '/infodev1/non-phi-data/share_tasks/biocreative/biocreative2017/chemprot/chemprot_development/chemprot_development_gold_standard.tsv'
-
-    print(gs_dev_txt)
-    # official eval has different working directory (./eval)
-    write_results(os.path.join('eval', output_dev_tsv), gs_dev_txt, pred_dev)
-    official_eval(output_dev_tsv, gs_dev_tsv)
-
-    # write_results(os.path.join('eval', output_test_tsv), gs_test_txt, pred_test)
-
-
 if __name__ == '__main__':
-    # submission_run(model_name)
-    # load_and_run('model/cnn')
     do_training()
     do_test()
-    # do_dev('config/test_config.ini')
