@@ -53,7 +53,7 @@ nb_filter = 200
 filter_length = 3
 
 # Common
-nb_epoch = 20
+nb_epoch = 5
 position_dims = 50
 
 dropout_rate = 0.2
@@ -73,14 +73,16 @@ mode = 'ent_candidate'
 model_name = 'cnn'
 # model_name = 'att_gru'
 # model_name = 'gru'
-model_name = 'att_lstm'
+# model_name = 'att_lstm'
 
 
-model_dir = 'model/cnn'
+model_dir = 'model'
+
 pkl_path = 'pkl/bioc_rel_%s.pkl.gz' % mode
 root_dir = 'data/org_ent'
 fns = ['training.txt', 'development.txt', 'test.txt']
 files = [os.path.join(root_dir, fn) for fn in fns]
+
 
 # mode = 'split'
 # pkl_path = 'pkl/i2b2_rel_within_sent_%s.pkl.gz' % mode
@@ -101,36 +103,36 @@ data = pkl.load(f)
 f.close()
 
 embeddings = data['wordEmbeddings']
-yTrain, sentenceTrain, positionTrain1, positionTrain2 = data['train_set']
-yDev, sentenceDev, positionDev1, positionDev2 = data['dev_set']
-yTest, sentenceTest, positionTest1, positionTest2 = data['test_set']
+y_train, sentence_train, position_train1, position_train2 = data['train_set']
+y_dev, sentence_dev, position_dev1, position_dev2 = data['dev_set']
+y_test, sentence_test, position_test1, position_test2 = data['test_set']
 
-max_position = max(np.max(positionTrain1), np.max(positionTrain2))+1
+max_position = max(np.max(position_train1), np.max(position_train2)) + 1
 
-n_out = max(yTrain) + 1
+n_out = max(y_train) + 1
 
 #train_y_cat = np_utils.to_categorical(yTrain, n_out)
-max_sentence_len = sentenceTrain.shape[1]
+max_sentence_len = sentence_train.shape[1]
 
-print("sentenceTrain: ", sentenceTrain.shape)
-print("positionTrain1: ", positionTrain1.shape)
-print("yTrain: ", yTrain.shape)
+print("sentenceTrain: ", sentence_train.shape)
+print("positionTrain1: ", position_train1.shape)
+print("yTrain: ", y_train.shape)
 
-print("sentenceDev: ", sentenceDev.shape)
-print("positionDev1: ", positionDev1.shape)
-print("yDev: ", yDev.shape)
+print("sentenceDev: ", sentence_dev.shape)
+print("positionDev1: ", position_dev1.shape)
+print("yDev: ", y_dev.shape)
 
 
 ## stack training with dev
-# yTrain = np.hstack((yTrain, yDev))
-# sentenceTrain = np.vstack((sentenceTrain, sentenceDev))
-# positionTrain1 = np.vstack((positionTrain1, positionDev1))
-# positionTrain2 = np.vstack((positionTrain2, positionDev2))
+y_train = np.hstack((y_train, y_dev))
+sentence_train = np.vstack((sentence_train, sentence_dev))
+position_train1 = np.vstack((position_train1, position_dev1))
+position_train2 = np.vstack((position_train2, position_dev2))
 
 
 target_names = get_target_labels('config/main_config.ini')
 
-max_sentence_len = max(sentenceTrain.shape[1], sentenceDev.shape[1])
+max_sentence_len = max(sentence_train.shape[1], sentence_dev.shape[1])
 
 print("class weights:")
 print(class_weights)
@@ -146,7 +148,7 @@ def predict_classes(prediction, pred_tag=''):
 def save_model(model_dir, model):
     # serialize model to YAML
     model_yaml = model.to_yaml()
-    with open( os.path.join(model_dir, model_name + ".yaml"), "w") as yaml_file:
+    with open(os.path.join(model_dir, model_name + ".yaml"), "w") as yaml_file:
         yaml_file.write(model_yaml)
     # serialize weights to HDF5
     model.save_weights( os.path.join(model_dir, model_name + ".h5"))
@@ -276,23 +278,22 @@ def do_training():
 
     csv_logger = CSVLogger('run/training_%s.log' % model_name)
 
-    model.fit([sentenceTrain, positionTrain1, positionTrain2], yTrain, batch_size=batch_size,
-                callbacks=[csv_logger],
-                verbose=2, epochs=nb_epoch,
-                class_weight=class_weights,
-                validation_data=([sentenceTest, positionTest1, positionTest2], yTest)
-                )
+    model.fit([sentence_train, position_train1, position_train2], y_train, batch_size=batch_size,
+              callbacks=[csv_logger],
+              verbose=2, epochs=nb_epoch,
+              class_weight=class_weights,
+              validation_data=([sentence_test, position_test1, position_test2], y_test)
+              )
 
     # pred_train = predict_classes(model.predict([sentenceTrain, positionTrain1, positionTrain2], verbose=False), pred_tag='train')
 
     save_model(model_dir, model)
 
-    print("Training done. ")
+    print("Training done. Model saved at: ")
 
 
 def do_test(stage='test'):
 
-    model_dir = config.get('main', 'model_dir')
 
     print("##" * 40)
 
@@ -301,12 +302,12 @@ def do_test(stage='test'):
     model = load_model(model_dir)
 
     if stage == 'dev':
-        y_gs = yDev
-        pred = predict_classes(model.predict([sentenceDev, positionDev1, positionDev2], verbose=False))
+        y_gs = y_dev
+        pred = predict_classes(model.predict([sentence_dev, position_dev1, position_dev2], verbose=False))
         gs_txt = gs_dev_txt
     elif stage == 'test':
-        y_gs = yTest
-        pred = predict_classes(model.predict([sentenceTest, positionTest1, positionTest2], verbose=False))
+        y_gs = y_test
+        pred = predict_classes(model.predict([sentence_test, position_test1, position_test2], verbose=False))
         gs_txt = gs_test_txt
     else:
         raise ValueError("Unsupported stage. Requires either \"dev\" or \"test\".")
@@ -319,11 +320,14 @@ def do_test(stage='test'):
     write_results(os.path.join('eval', output_tsv), gs_txt, pred)
     official_eval(output_tsv, gs_tsv)
 
+    print(y_gs)
+    print(pred)
+
+    print(confusion_matrix(y_gs, pred))
+
     print(classification_report(y_gs, pred, labels=range(1, 6),
                                 target_names=target_names[1:],
                                 digits=3))
-
-    print(confusion_matrix(y_gs, pred))
 
     return pred
 
