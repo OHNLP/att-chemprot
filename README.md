@@ -17,8 +17,8 @@ Data (may require login): http://www.biocreative.org/accounts/login/?next=/resou
 ### Update configuration file
  Go through the config file `config/main_config.ini` to modify the paths
  accordingly.
-    * `corpus_dir`: unzipped corpus directory
-    * `out_dir`: the output directory of preprocessed file
+ * `corpus_dir`: unzipped corpus directory
+ * `out_dir`: the output directory of preprocessed file
 
 ### Preprocessing
 ```
