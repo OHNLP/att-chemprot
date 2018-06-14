@@ -5,7 +5,7 @@ from nltk.tokenize.punkt import PunktSentenceTokenizer
 from nltk import word_tokenize
 from annot_util.brat_util import Document, ent_cmp, Corpus, ENCODING
 from collections import deque
-from annot_util.config import get_target_labels
+from annot_util.config import ChemProtConfig
 import itertools
 import random
 
@@ -18,7 +18,9 @@ import codecs
 punkt_tokenizer = PunktSentenceTokenizer()
 punkt_tokenizer._params.abbrev_types.add('dr')  # ref: http://nlpforhackers.io/splitting-text-into-sentences/
 
-cpr_labels = get_target_labels('config/main_config.ini')
+config = ChemProtConfig('config/main_config.ini')
+
+cpr_labels = config.get_target_labels()
 
 import re
 par_ptn = re.compile(r'.*\((.*)\)')
@@ -369,21 +371,12 @@ def do_corpus(corpus_root, out_path, is_testing=False):
 
 def do_cpr():
 
-    in_root = '/infodev1/non-phi-data/share_tasks/biocreative/biocreative2017/chemprot'
-    out_root = 'data/org_ent'
+    in_root = config.get('main', 'corpus_dir')
+    out_root = config.get('main', 'out_dir')
+
     do_corpus(os.path.join(in_root, 'chemprot_training'), os.path.join(out_root, 'training.txt'))
     do_corpus(os.path.join(in_root, 'chemprot_development'), os.path.join(out_root, 'development.txt'))
     do_corpus(os.path.join(in_root, 'chemprot_test'), os.path.join(out_root, 'test.txt'), is_testing=False)
-
-
-
-def debug_cpr():
-
-    in_root = '/infodev1/non-phi-data/share_tasks/biocreative/biocreative2017/chemprot'
-    out_root = 'data/org'
-    do_corpus(os.path.join(in_root, 'chemprot_training'), os.path.join(out_root, 'training.txt'))
-    # do_corpus(os.path.join(in_root, 'chemprot_development'), os.path.join(out_root, 'development.txt'))
-    # do_corpus(os.path.join(in_root, 'chemprot_test'), os.path.join(out_root, 'test.txt'), is_testing=True)
 
 
 if __name__ == '__main__':

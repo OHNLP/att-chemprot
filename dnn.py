@@ -24,19 +24,13 @@ from keras.layers import Input, Dense, Dropout, Activation, Flatten, concatenate
 from keras.layers import Embedding
 from keras.layers import Convolution1D, MaxPooling1D, GlobalMaxPooling1D
 from keras.layers import LSTM, GRU, Bidirectional, SimpleRNN
-from keras.layers.merge import Concatenate
-from keras.regularizers import Regularizer
-from keras.preprocessing import sequence
-from keras.callbacks import CSVLogger
-
+from keras.callbacks import CSVLogger, TensorBoard, EarlyStopping
 
 from attention_lstm import AttentionWithContext
-from keras.initializers import RandomNormal, RandomUniform
-
 
 from sklearn.metrics import classification_report, f1_score, precision_recall_fscore_support, confusion_matrix
 
-from annot_util.config import get_stage_config, get_target_labels
+from annot_util.config import ChemProtConfig
 
 if (sys.version_info > (3, 0)):
     import pickle as pkl
@@ -45,52 +39,41 @@ else: #Python 2.7 imports
 
 np.random.seed(42)  # for reproducibility
 
-config = get_stage_config('config/main_config.ini')
+config = ChemProtConfig('config/main_config.ini')
 
-# CNN
+# CNN hyperparameters
 batch_size = 64
 nb_filter = 200
 filter_length = 3
 
-# Common
-nb_epoch = 5
+# Common hyperparameters
+nb_epoch = 20
 position_dims = 50
 
-dropout_rate = 0.2
+dropout_rate = 0.5
 
 lstm_units = 128
 
 weights = 1
 class_weights = {0:1., 1:weights, 2:weights, 3:weights, 4:weights, 5:weights}
 
-# mode = 'original_candidate'
-
 mode = 'ent_candidate'
 
-# mode = 'ent_candidate_40'
-
-
 model_name = 'cnn'
-# model_name = 'att_gru'
+model_name = 'att_gru'
 # model_name = 'gru'
 # model_name = 'att_lstm'
+# model_name = 'att_gru_last'
 
 
 model_dir = 'model'
 
+# load prepared data in .pkl the same ways as preprocess.py
 pkl_path = 'pkl/bioc_rel_%s.pkl.gz' % mode
 root_dir = 'data/org_ent'
 fns = ['training.txt', 'development.txt', 'test.txt']
 files = [os.path.join(root_dir, fn) for fn in fns]
-
-
-# mode = 'split'
-# pkl_path = 'pkl/i2b2_rel_within_sent_%s.pkl.gz' % mode
-
-# pkl_path = 'pkl/timer_rel_contain_%s.pkl.gz' % mode
-
 print("mode: " + mode)
-
 
 gs_dev_txt = files[1]
 gs_test_txt = files[2]
@@ -111,7 +94,6 @@ max_position = max(np.max(position_train1), np.max(position_train2)) + 1
 
 n_out = max(y_train) + 1
 
-#train_y_cat = np_utils.to_categorical(yTrain, n_out)
 max_sentence_len = sentence_train.shape[1]
 
 print("sentenceTrain: ", sentence_train.shape)
@@ -123,14 +105,15 @@ print("positionDev1: ", position_dev1.shape)
 print("yDev: ", y_dev.shape)
 
 
-## stack training with dev
+# stack training with dev
+# comment out  the following four lines if you would like to train models only on the training set
 y_train = np.hstack((y_train, y_dev))
 sentence_train = np.vstack((sentence_train, sentence_dev))
 position_train1 = np.vstack((position_train1, position_dev1))
 position_train2 = np.vstack((position_train2, position_dev2))
 
 
-target_names = get_target_labels('config/main_config.ini')
+target_names = config.get_target_labels()
 
 max_sentence_len = max(sentence_train.shape[1], sentence_dev.shape[1])
 
@@ -238,6 +221,7 @@ def init_att_gru_model():
 
     return model
 
+
 def init_rnn_model():
     words_input = Input(shape=(max_sentence_len,), dtype='int32', name='words_input')
     words = Embedding(embeddings.shape[0], embeddings.shape[1], weights=[embeddings], trainable=False)(words_input)
@@ -259,13 +243,41 @@ def init_rnn_model():
     return model
 
 
+def init_att_gru_last_model():
+    words_input = Input(shape=(max_sentence_len,), dtype='int32', name='words_input')
+    words = Embedding(embeddings.shape[0], embeddings.shape[1], weights=[embeddings], trainable=False)(words_input)
+    distance1_input = Input(shape=(max_sentence_len,), dtype='int32', name='distance1_input')
+    distance1 = Embedding(max_position, position_dims)(distance1_input)
+
+    distance2_input = Input(shape=(max_sentence_len,), dtype='int32', name='distance2_input')
+    distance2 = Embedding(max_position, position_dims)(distance2_input)
+
+    output = concatenate([words, distance1, distance2])
+
+    rnn_for_att = GRU(lstm_units, return_sequences=True, dropout=dropout_rate)(output)
+
+    rnn_output = GRU(lstm_units, return_sequences=False, dropout=dropout_rate)(output)
+    att_output = AttentionWithContext()(rnn_for_att)
+
+    output = concatenate([rnn_output, att_output])
+    output = Dense(n_out, activation='sigmoid')(output)
+    model = Model(inputs=[words_input, distance1_input, distance2_input], outputs=output)
+
+    return model
+
+
 def do_training():
+    """
+    Main function of training DNN models
+    :return:
+    """
 
     init_func = {
         'cnn': init_cnn_model,
         'att_gru': init_att_gru_model,
         'att_lstm': init_att_lstm_model,
         'gru': init_rnn_model,
+        'att_gru_last': init_att_gru_last_model,
     }
 
     model = init_func[model_name]()
@@ -278,14 +290,19 @@ def do_training():
 
     csv_logger = CSVLogger('run/training_%s.log' % model_name)
 
+    callbacks = [
+        # TensorBoard(log_dir='log/run1', histogram_freq=1, write_graph=True,
+        #             write_images=False),
+
+        EarlyStopping(monitor='val_loss', patience=4),
+        CSVLogger('run/training_%s.log' % model_name)]
+
     model.fit([sentence_train, position_train1, position_train2], y_train, batch_size=batch_size,
-              callbacks=[csv_logger],
+              callbacks=callbacks,
               verbose=2, epochs=nb_epoch,
               class_weight=class_weights,
               validation_data=([sentence_test, position_test1, position_test2], y_test)
               )
-
-    # pred_train = predict_classes(model.predict([sentenceTrain, positionTrain1, positionTrain2], verbose=False), pred_tag='train')
 
     save_model(model_dir, model)
 
@@ -293,8 +310,11 @@ def do_training():
 
 
 def do_test(stage='test'):
-
-
+    """
+    Run official submission
+    :param stage: 'test' or 'dev'.
+    :return:
+    """
     print("##" * 40)
 
     print('Stage: %s. starting evaluating using %s set: ' % (stage, stage))
@@ -320,11 +340,12 @@ def do_test(stage='test'):
     write_results(os.path.join('eval', output_tsv), gs_txt, pred)
     official_eval(output_tsv, gs_tsv)
 
-    print(y_gs)
-    print(pred)
-
+    print()
+    print('Confusion Matrix: ')
     print(confusion_matrix(y_gs, pred))
 
+    print()
+    print('Classification Report:')
     print(classification_report(y_gs, pred, labels=range(1, 6),
                                 target_names=target_names[1:],
                                 digits=3))
@@ -365,10 +386,13 @@ def official_eval(output_tsv, gs_tsv):
     :param gs_tsv:
     :return:
     """
+    print()
+    print('Official Evaluation Results:')
     os.chdir('eval')
     os.system("./eval.sh %s %s" % (output_tsv, gs_tsv))
     os.chdir('..')
     print()
+
 
 if __name__ == '__main__':
     do_training()
