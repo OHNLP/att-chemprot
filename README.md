@@ -15,7 +15,8 @@ Data (may require login): http://www.biocreative.org/accounts/login/?next=/resou
 ## Usage
 
 ### Update configuration file
- Go through the config file `config/main_config.ini` to modify the paths
+ Go through the config file `config/main_config.ini` to modify the
+ following paths
  accordingly.
  * `corpus_dir`: unzipped corpus directory
  * `out_dir`: the output directory of preprocessed file
@@ -50,7 +51,7 @@ the dataset by:
 python dnn.py
 ```
 
-The output file is in TSV format, the same as the gold standard files.
+The output file is in [Brat standoff format](http://brat.nlplab.org/standoff.html), the same as the gold standard files.
 The offical envaluation script (locates under `./eval`) will be
 automatically called.
 
