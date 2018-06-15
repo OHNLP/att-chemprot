@@ -1,7 +1,7 @@
 # Attention based Neural Networks for Chemical Protein Relation
 
-Task description: http://www.biocreative.org/tasks/biocreative-vi/track-5/
-Data (may require login): http://www.biocreative.org/accounts/login/?next=/resources/corpora/chemprot-corpus-biocreative-vi/
+* Task description: http://www.biocreative.org/tasks/biocreative-vi/track-5/
+* Data (may require login): http://www.biocreative.org/accounts/login/?next=/resources/corpora/chemprot-corpus-biocreative-vi/
 
 
 ## Prerequisites
@@ -59,36 +59,36 @@ The official results will be like:
 
 ```
 Total annotations: 3458
-Total predictions: 2358
-TP: 1492
-FN: 1966
-FP: 866
-Precision: 0.6327396098388465
-Recall: 0.43146327356853675
-F-score: 0.5130674002751032
+Total predictions: 4184
+TP: 2003
+FN: 1455
+FP: 2181
+Precision: 0.47872848948374763
+Recall: 0.5792365529207635
+F-score: 0.5242083224286836
 ```
 
 The confusion matrix and classification report will also be printed:
 
 ```
 Confusion Matrix:
-[[9226  185  357   79   30  108]
- [ 309  257   31    0    0    1]
- [ 599   40  860    3    4    6]
- [  63    3    1   93    0    1]
- [ 151    0    2    6  111    0]
- [ 389    0   14    0    0  166]]
+[[8028  382  918  120  236  301]
+ [ 189  308   92    0    7    2]
+ [ 315   33 1142    7    8    7]
+ [  47    4    3   95   11    1]
+ [  67    0    8    8  187    0]
+ [ 265   11   27    0    0  266]]
 
 Classification Report:
              precision    recall  f1-score   support
 
-      CPR:3      0.530     0.430     0.475       598
-      CPR:4      0.680     0.569     0.619      1512
-      CPR:5      0.514     0.578     0.544       161
-      CPR:6      0.766     0.411     0.535       270
-      CPR:9      0.589     0.292     0.390       569
+      CPR:3      0.417     0.515     0.461       598
+      CPR:4      0.521     0.755     0.617      1512
+      CPR:5      0.413     0.590     0.486       161
+      CPR:6      0.416     0.693     0.520       270
+      CPR:9      0.461     0.467     0.464       569
 
-avg / total      0.633     0.478     0.538      3110
+avg / total      0.476     0.642     0.544      3110
 ```
 
 ### Visualization of Attention
