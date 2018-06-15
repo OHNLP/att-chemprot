@@ -6,11 +6,12 @@
 
 ## Prerequisites
 
-* Python 3.6 (should work for 2.7 too)
+* Python 2.7
 * TensorFlow 1.2.1
 * Keras 2.0.5
 * NLTK
 * Scikit-learn
+* ConfigParser
 
 ## Usage
 
@@ -51,11 +52,17 @@ the dataset by:
 python dnn.py
 ```
 
-The output file is in [Brat standoff format](http://brat.nlplab.org/standoff.html), the same as the gold standard files.
-The offical envaluation script (locates under `./eval`) will be
-automatically called.
+The output file is in [Brat standoff format](http://brat.nlplab.org/standoff.html),
+the same as the gold standard files. Each epoch of ATT-GRU will take 83
+seconds on a NVIDIA Tesla P40 GPU to complete.
 
-The official results will be like:
+
+The offical envaluation script can be downloaded at the offical site:
+ [ChemProt evaluation kit](http://www.biocreative.org/media/store/files/2017/evaluation-kit.zip)
+A copy is also provided under `./eval` for the convenience of usage, and it will be called
+automatically after the output file on the test set is generented.
+
+The official result is:
 
 ```
 Total annotations: 3458
@@ -68,18 +75,19 @@ Recall: 0.5792365529207635
 F-score: 0.5242083224286836
 ```
 
-The confusion matrix and classification report will also be printed:
+The confusion matrix and classification report will also be printed.
 
-```
 Confusion Matrix:
+```
 [[8028  382  918  120  236  301]
  [ 189  308   92    0    7    2]
  [ 315   33 1142    7    8    7]
  [  47    4    3   95   11    1]
  [  67    0    8    8  187    0]
  [ 265   11   27    0    0  266]]
-
+```
 Classification Report:
+```
              precision    recall  f1-score   support
 
       CPR:3      0.417     0.515     0.461       598

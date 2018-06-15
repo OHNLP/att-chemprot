@@ -6,8 +6,12 @@
     Author: Sijia Liu (m142167)
     Date created: Feb 13, 2018
 """
+import sys
 
-from ConfigParser import SafeConfigParser
+if sys.version_info > (3, 5):   #Python 3.5+ imports
+    from configparser import SafeConfigParser
+else: #Python 2.7 imports
+    from ConfigParser import SafeConfigParser
 
 
 class ChemProtConfig:
@@ -27,7 +31,7 @@ class ChemProtConfig:
         """
         rel2id = self.read_rel_id()
         target_labels = ['NA'] * len(rel2id.keys())
-        for label, index in rel2id.iteritems():
+        for label, index in rel2id.items():
             target_labels[int(index)] = label
 
         return target_labels

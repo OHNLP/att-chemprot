@@ -66,7 +66,7 @@ model_name = 'att_gru'
 # model_name = 'att_gru_last'
 
 
-model_dir = 'model'
+model_dir = config.get('main', 'model_dir')
 
 # load prepared data in .pkl the same ways as preprocess.py
 pkl_path = 'pkl/bioc_rel_%s.pkl.gz' % mode
@@ -82,7 +82,7 @@ print("Loading dataset")
 # f = gzip.open('pkl/sem-relations.pkl.gz', 'rb')
 f = gzip.open(pkl_path, 'rb')
 
-data = pkl.load(f)
+data = pkl.load(f, encoding='latin1')
 f.close()
 
 embeddings = data['wordEmbeddings']
