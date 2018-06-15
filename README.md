@@ -102,11 +102,14 @@ avg / total      0.476     0.642     0.544      3110
 ### Visualization of Attention
 
 Please follow the Jupyter Notebook `model_att_vis.ipynb` for details.
-It can also be done via:
-```
-python model_att_vis.py
-```
 
+## Acknowledgment
+
+The relation classification architechture is based on the
+ [Relation CNN implementation](https://github.com/UKPLab/deeplearning4nlp-tutorial/tree/master/2017-07_Seminar/Session%203%20-%20Relation%20CNN)
+from [UKPLab](https://github.com/UKPLab).
+
+The attention RNN is inspired by the code snippet by cbaziotis: https://gist.github.com/cbaziotis/7ef97ccf71cbc14366835198c09809d2.
 
 ## Reference
 

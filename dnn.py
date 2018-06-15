@@ -5,6 +5,9 @@ The architecture is based on:
 
 Daojian Zeng, Kang Liu, Siwei Lai, Guangyou Zhou and Jun Zhao, 2014, Relation Classification via Convolutional Deep Neural Network
 
+The implementation and IO is based on :
+https://github.com/UKPLab/deeplearning4nlp-tutorial/tree/master/2017-07_Seminar/Session%203%20-%20Relation%20CNN
+
 Code was tested with:
 - Python 2.7
 - TensorFlow 1.2.1
