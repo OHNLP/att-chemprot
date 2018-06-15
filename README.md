@@ -103,6 +103,14 @@ avg / total      0.476     0.642     0.544      3110
 
 Please follow the Jupyter Notebook `model_att_vis.ipynb` for details.
 
+Examples:
+
+![attention-vis-6](png_examples/6.png?raw=true "Examples-6")
+
+![attention-vis-96](png_examples/96.png?raw=true "Examples-96")
+
+
+
 ## Acknowledgment
 
 The relation classification architechture is based on the
