@@ -66,37 +66,38 @@ The official result is:
 
 ```
 Total annotations: 3458
-Total predictions: 4184
-TP: 2003
-FN: 1455
-FP: 2181
-Precision: 0.47872848948374763
-Recall: 0.5792365529207635
-F-score: 0.5242083224286836
+Total predictions: 2939
+TP: 1687
+FN: 1771
+FP: 1252
+Precision: 0.5740047635250085
+Recall: 0.48785425101214575
+F-score: 0.5274347350320463
 ```
 
 The confusion matrix and classification report will also be printed.
 
 Confusion Matrix:
 ```
-[[8028  382  918  120  236  301]
- [ 189  308   92    0    7    2]
- [ 315   33 1142    7    8    7]
- [  47    4    3   95   11    1]
- [  67    0    8    8  187    0]
- [ 265   11   27    0    0  266]]
+[[8859  138  573   70   73  272]
+ [ 344  212   37    1    1    3]
+ [ 485   33  969    3   11   11]
+ [  69    4    1   86    0    1]
+ [ 125    0    5    4  136    0]
+ [ 274    3   12    0    0  280]]
 ```
 Classification Report:
 ```
              precision    recall  f1-score   support
 
-      CPR:3      0.417     0.515     0.461       598
-      CPR:4      0.521     0.755     0.617      1512
-      CPR:5      0.413     0.590     0.486       161
-      CPR:6      0.416     0.693     0.520       270
-      CPR:9      0.461     0.467     0.464       569
+      CPR:3      0.544     0.355     0.429       598
+      CPR:4      0.607     0.641     0.623      1512
+      CPR:5      0.524     0.534     0.529       161
+      CPR:6      0.615     0.504     0.554       270
+      CPR:9      0.494     0.492     0.493       569
 
-avg / total      0.476     0.642     0.544      3110
+avg / total      0.570     0.541     0.551      3110
+
 ```
 
 ### Visualization of Attention

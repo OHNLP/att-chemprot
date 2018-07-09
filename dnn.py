@@ -48,26 +48,19 @@ config = ChemProtConfig('config/main_config.ini')
 batch_size = 64
 nb_filter = 200
 filter_length = 3
-
-# Common hyperparameters
 nb_epoch = 20
 position_dims = 50
-
 dropout_rate = 0.5
-
 lstm_units = 128
-
+learning_rate = 0.001
 weights = 1
 class_weights = {0:1., 1:weights, 2:weights, 3:weights, 4:weights, 5:weights}
 
 mode = 'ent_candidate'
 
-model_name = 'cnn'
-model_name = 'att_gru'
-# model_name = 'gru'
-# model_name = 'att_lstm'
-# model_name = 'att_gru_last'
+# choose between 'cnn', 'gru' ,'att_lstm', 'att_gru'
 
+model_name = 'att_gru'
 
 model_dir = config.get('main', 'model_dir')
 
@@ -85,7 +78,9 @@ print("Loading dataset")
 # f = gzip.open('pkl/sem-relations.pkl.gz', 'rb')
 f = gzip.open(pkl_path, 'rb')
 
-data = pkl.load(f, encoding='latin1')
+# data = pkl.load(f, encoding='latin1')
+data = pkl.load(f)
+
 f.close()
 
 embeddings = data['wordEmbeddings']
@@ -187,7 +182,25 @@ def init_cnn_model():
     return model
 
 
-def init_att_lstm_model():
+def init_gru_model():
+    words_input = Input(shape=(max_sentence_len,), dtype='int32', name='words_input')
+    words = Embedding(embeddings.shape[0], embeddings.shape[1], weights=[embeddings], trainable=False)(words_input)
+    distance1_input = Input(shape=(max_sentence_len,), dtype='int32', name='distance1_input')
+    distance1 = Embedding(max_position, position_dims)(distance1_input)
+
+    distance2_input = Input(shape=(max_sentence_len,), dtype='int32', name='distance2_input')
+    distance2 = Embedding(max_position, position_dims)(distance2_input)
+
+    output = concatenate([words, distance1, distance2])
+
+    output = GRU(lstm_units, return_sequences=False, dropout=dropout_rate)(output)
+    output = Dense(n_out, activation='sigmoid')(output)
+    model = Model(inputs=[words_input, distance1_input, distance2_input], outputs=output)
+
+    return model
+
+
+def init_att_rnn_model():
     words_input = Input(shape=(max_sentence_len,), dtype='int32', name='words_input')
     words = Embedding(embeddings.shape[0], embeddings.shape[1], weights=[embeddings], trainable=False)(words_input)
     distance1_input = Input(shape=(max_sentence_len,), dtype='int32', name='distance1_input')
@@ -199,6 +212,25 @@ def init_att_lstm_model():
     output = concatenate([words, distance1, distance2])
 
     output = SimpleRNN(lstm_units, return_sequences=True, dropout=dropout_rate)(output)
+    output = AttentionWithContext()(output)
+    output = Dense(n_out, activation='sigmoid')(output)
+    model = Model(inputs=[words_input, distance1_input, distance2_input], outputs=output)
+
+    return model
+
+
+def init_att_lstm_model():
+    words_input = Input(shape=(max_sentence_len,), dtype='int32', name='words_input')
+    words = Embedding(embeddings.shape[0], embeddings.shape[1], weights=[embeddings], trainable=False)(words_input)
+    distance1_input = Input(shape=(max_sentence_len,), dtype='int32', name='distance1_input')
+    distance1 = Embedding(max_position, position_dims)(distance1_input)
+
+    distance2_input = Input(shape=(max_sentence_len,), dtype='int32', name='distance2_input')
+    distance2 = Embedding(max_position, position_dims)(distance2_input)
+
+    output = concatenate([words, distance1, distance2])
+
+    output = LSTM(lstm_units, return_sequences=True, dropout=dropout_rate)(output)
     output = AttentionWithContext()(output)
     output = Dense(n_out, activation='sigmoid')(output)
     model = Model(inputs=[words_input, distance1_input, distance2_input], outputs=output)
@@ -219,27 +251,6 @@ def init_att_gru_model():
 
     output = GRU(lstm_units, return_sequences=True, dropout=dropout_rate)(output)
     output = AttentionWithContext()(output)
-    output = Dense(n_out, activation='sigmoid')(output)
-    model = Model(inputs=[words_input, distance1_input, distance2_input], outputs=output)
-
-    return model
-
-
-def init_rnn_model():
-    words_input = Input(shape=(max_sentence_len,), dtype='int32', name='words_input')
-    words = Embedding(embeddings.shape[0], embeddings.shape[1], weights=[embeddings], trainable=False)(words_input)
-    distance1_input = Input(shape=(max_sentence_len,), dtype='int32', name='distance1_input')
-    distance1 = Embedding(max_position, position_dims)(distance1_input)
-
-    distance2_input = Input(shape=(max_sentence_len,), dtype='int32', name='distance2_input')
-    distance2 = Embedding(max_position, position_dims)(distance2_input)
-
-    output = concatenate([words, distance1, distance2])
-
-    # initializer = RandomUniform(minval=-0.54, maxval=0.5, seed=None)
-
-    output = GRU(lstm_units, return_sequences=False, dropout=dropout_rate)(output)
-
     output = Dense(n_out, activation='sigmoid')(output)
     model = Model(inputs=[words_input, distance1_input, distance2_input], outputs=output)
 
@@ -277,28 +288,27 @@ def do_training():
 
     init_func = {
         'cnn': init_cnn_model,
+        'gru': init_att_gru_model,
         'att_gru': init_att_gru_model,
         'att_lstm': init_att_lstm_model,
-        'gru': init_rnn_model,
-        'att_gru_last': init_att_gru_last_model,
+        'att_rnn': init_att_rnn_model,
     }
 
     model = init_func[model_name]()
 
-    optimizer = keras.optimizers.Adam(lr=0.001, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
+    optimizer = keras.optimizers.Adam(lr=learning_rate, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
 
     model.compile(optimizer=optimizer, loss='sparse_categorical_crossentropy', metrics=['accuracy'])
 
     model.summary()
-
-    csv_logger = CSVLogger('run/training_%s.log' % model_name)
 
     callbacks = [
         # TensorBoard(log_dir='log/run1', histogram_freq=1, write_graph=True,
         #             write_images=False),
 
         EarlyStopping(monitor='val_loss', patience=4),
-        CSVLogger('run/training_%s.log' % model_name)]
+        # CSVLogger('run/training_%s.log' % model_name),
+    ]
 
     model.fit([sentence_train, position_train1, position_train2], y_train, batch_size=batch_size,
               callbacks=callbacks,
@@ -399,4 +409,4 @@ def official_eval(output_tsv, gs_tsv):
 
 if __name__ == '__main__':
     do_training()
-    do_test()
+    do_test(stage='test')
