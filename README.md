@@ -118,7 +118,7 @@ The relation classification architechture is based on the
  [Relation CNN implementation](https://github.com/UKPLab/deeplearning4nlp-tutorial/tree/master/2017-07_Seminar/Session%203%20-%20Relation%20CNN)
 from [UKPLab](https://github.com/UKPLab).
 
-The attention RNN is inspired by the code snippet by cbaziotis: https://gist.github.com/cbaziotis/7ef97ccf71cbc14366835198c09809d2.
+The attention RNN is inspired by the code snippet from cbaziotis: https://gist.github.com/cbaziotis/7ef97ccf71cbc14366835198c09809d2.
 
 ## Reference
 > S Liu, F Shen,  R Komandur Elayavilli,  Y Wang, M Rastegar-Mojarad,  V Chaudhary,  H Liu. [Extracting chemical–protein relations using attention-based neural networks](https://doi.org/10.1093/database/bay102).  Database, Volume 2018, bay102.
