@@ -122,5 +122,3 @@ The attention RNN is inspired by the [code snippet](https://gist.github.com/cbaz
 
 ## Reference
 > S Liu, F Shen,  R Komandur Elayavilli,  Y Wang, M Rastegar-Mojarad,  V Chaudhary,  H Liu. [Extracting chemical–protein relations using attention-based neural networks](https://doi.org/10.1093/database/bay102).  Database, Volume 2018, bay102.
-
-> S Liu, F Shen, Y Wang, M Rastegar-Mojarad, RK Elayavilli, V Chaudhary, H Liu. *Attention-based Neural Networks for Chemical Protein Relation Extraction*. BioCreative VI Workshop Proceedings. 2017. [[PDF](http://www.biocreative.org/media/store/files/2018/BC6_track5_4.pdf)] [[Slides](http://www.acsu.buffalo.edu/~sijialiu/uploads/slides_bioc_17.pdf)]
